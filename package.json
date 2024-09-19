@@ -1,6 +1,6 @@
 {
   "name": "chartjs-adapter-intl",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Chart.js adapter to use native ECMAScript Internationalization API for date formatting",
   "repository": {
     "type": "git",
