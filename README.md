@@ -17,13 +17,13 @@ Requires [Chart.js](https://github.com/chartjs/Chart.js/releases) **3.0.0** or l
 You can install this adapter via pnpm:
 
 ```sh
-pnpm install chartjs-adapter-intl
+pnpm add chartjs-adapter-intl
 ```
 
 via npm:
 
 ```sh
-npm add chartjs-adapter-intl
+npm install chartjs-adapter-intl
 ```
 
 via yarn:
