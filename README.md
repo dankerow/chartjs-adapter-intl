@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/chartjs-adapter-intl.svg?style=flat-square)](https://www.npmjs.com/package/chartjs-adapter-intl)
 [![npm](https://img.shields.io/npm/dm/chartjs-adapter-intl.svg?style=flat-square)](https://www.npmjs.com/package/chartjs-adapter-intl)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/dankerow/chartjs-adapter-intl/test.yml?branch=master&style=flat-square)](https://github.com/dankerow/chartjs-adapter-intl/actions/workflows/test.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/dankerow/chartjs-adapter-intl/ci.yml?style=flat-square)](https://github.com/dankerow/chartjs-adapter-intl/actions/workflows/ci.yml)
 
 ## Introduction
 
