@@ -2,86 +2,128 @@ import type { TimeUnit } from 'chart.js'
 
 import { _adapters } from 'chart.js'
 
-const FORMATS = {
+export interface AdapterOptions {
+  locale?: string
+  timeZone?: string
+}
+
+const FORMAT_OPTIONS: Record<
+  string,
+  Intl.DateTimeFormatOptions & { fractionalSecondDigits?: number }
+> = {
   datetime: { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' },
   millisecond: { hour: 'numeric', minute: 'numeric', second: 'numeric', fractionalSecondDigits: 3 },
   second: { hour: 'numeric', minute: 'numeric', second: 'numeric' },
   minute: { hour: 'numeric', minute: 'numeric' },
   hour: { hour: 'numeric' },
   day: { month: 'short', day: 'numeric' },
-  week: { year: 'numeric', month: 'short', day: 'numeric' },
+  week: { month: 'short', day: 'numeric' },
   month: { year: 'numeric', month: 'short' },
   quarter: { year: 'numeric', month: 'short' },
   year: { year: 'numeric' }
 }
 
-_adapters._date.override({
-  // @ts-ignore
+const FORMATS = {
+  datetime: 'datetime',
+  millisecond: 'millisecond',
+  second: 'second',
+  minute: 'minute',
+  hour: 'hour',
+  day: 'day',
+  week: 'week',
+  month: 'month',
+  quarter: 'quarter',
+  year: 'year',
+}
+
+_adapters._date.override<AdapterOptions>({
   formats: () => FORMATS,
   parse: function (value: unknown, _format?: TimeUnit): number | null {
     if (value === null || value === undefined) {
-      return null;
+      return null
+    }
+
+    if (value instanceof Date) {
+      return value.getTime()
     }
 
     if (typeof value === 'string' || typeof value === 'number') {
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? null : date.getTime();
+      const date = new Date(value)
+      return Number.isNaN(date.getTime()) ? null : date.getTime()
     }
 
-    return null;
+    return null
   },
-  format: function (time: number, format: Intl.DateTimeFormatOptions): string {
-    const date = new Date(time);
-    const locale = this.options?.locale || 'en-US';
+  format: function (timestamp: number, format: TimeUnit): string {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const locale = this.options?.locale || 'en-US'
 
-    return new Intl.DateTimeFormat(locale, format).format(date);
+    const date = new Date(timestamp)
+    const localTimestamp = date.getTime() + date.getTimezoneOffset() * (60 * 100 * 10)
+
+    if (format === FORMATS.quarter) {
+      const month = date.getUTCMonth()
+      const quarter = Math.floor(month / 3) + 1
+      const year = new Intl.DateTimeFormat(locale, { year: 'numeric', timeZone }).format(localTimestamp)
+
+      return `Q${quarter} - ${year}`
+    }
+
+    return new Intl.DateTimeFormat(locale, {
+      ...FORMAT_OPTIONS[format],
+      timeZone
+    }).format(localTimestamp)
   },
   add: function (time: number, amount: number, unit: string) {
+    const locale = this.options?.locale || 'en-US'
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     const date = new Date(time)
+
+    const localDate = new Date(date.toLocaleString(locale, { timeZone }))
 
     switch (unit) {
       case 'millisecond': {
-        date.setMilliseconds(date.getMilliseconds() + amount);
-        break;
+        localDate.setMilliseconds(localDate.getMilliseconds() + amount)
+        break
       }
       case 'second': {
-        date.setSeconds(date.getSeconds() + amount);
-        break;
+        localDate.setSeconds(localDate.getSeconds() + amount)
+        break
       }
       case 'minute': {
-        date.setMinutes(date.getMinutes() + amount);
-        break;
+        localDate.setMinutes(localDate.getMinutes() + amount)
+        break
       }
       case 'hour': {
-        date.setHours(date.getHours() + amount);
-        break;
+        localDate.setHours(localDate.getHours() + amount)
+        break
       }
       case 'day': {
-        date.setDate(date.getDate() + amount);
-        break;
+        localDate.setDate(localDate.getDate() + amount)
+        break
       }
       case 'week': {
-        date.setDate(date.getDate() + amount * 7);
-        break;
+        localDate.setDate(localDate.getDate() + amount * 7)
+        break
       }
       case 'month': {
-        date.setMonth(date.getMonth() + amount);
-        break;
+        localDate.setMonth(localDate.getMonth() + amount)
+        break
       }
       case 'quarter': {
-        date.setMonth(date.getMonth() + amount * 3);
-        break;
+        localDate.setUTCMonth(localDate.getUTCMonth() + amount * 3)
+        break
       }
       case 'year': {
-        date.setFullYear(date.getFullYear() + amount);
-        break;
+        localDate.setFullYear(localDate.getFullYear() + amount)
+        break
       }
       default: {
-        break;
+        return time
       }
     }
 
-    return date.getTime();
+    return localDate.getTime()
   },
   diff: function (max: number, min: number, unit: TimeUnit) {
     const dateMax = new Date(max)
@@ -90,22 +132,22 @@ _adapters._date.override({
 
     switch (unit) {
       case 'millisecond': {
-        return diff;
+        return diff
       }
       case 'second': {
-        return diff / 1000;
+        return diff / 1000
       }
       case 'minute': {
-        return diff / (1000 * 60);
+        return diff / (1000 * 60)
       }
       case 'hour': {
-        return diff / (1000 * 60 * 60);
+        return diff / (1000 * 60 * 60)
       }
       case 'day': {
-        return diff / (1000 * 60 * 60 * 24);
+        return diff / (1000 * 60 * 60 * 24)
       }
       case 'week': {
-        return diff / (1000 * 60 * 60 * 24 * 7);
+        return diff / (1000 * 60 * 60 * 24 * 7)
       }
       case 'month': {
         return (dateMax.getFullYear() - dateMin.getFullYear()) * 12 + (dateMax.getMonth() - dateMin.getMonth())
@@ -122,119 +164,134 @@ _adapters._date.override({
     }
   },
   startOf: function (time: number, unit: TimeUnit | 'isoWeek'): number {
+    const locale = this.options?.locale || 'en-US'
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     const date = new Date(time)
 
+    const localDate = new Date(date.toLocaleString(locale, { timeZone }))
+
     switch (unit) {
+      case 'millisecond': {
+        return time
+      }
       case 'second': {
-        date.setMilliseconds(0)
+        localDate.setMilliseconds(0)
         break;
       }
       case 'minute': {
-        date.setSeconds(0, 0)
+        localDate.setSeconds(0, 0)
         break;
       }
       case 'hour': {
-        date.setMinutes(0, 0, 0)
+        localDate.setMinutes(0, 0, 0)
         break;
       }
       case 'day': {
-        date.setHours(0, 0, 0, 0)
-        break;
+        localDate.setUTCHours(0, 0, 0, 0)
+        break
       }
       case 'week': {
-        const day = date.getDay()
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1)
-        date.setDate(diff)
-        date.setHours(0, 0, 0, 0)
-        break;
+        const day = date.getUTCDay()
+        const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1)
+        date.setUTCDate(diff)
+        date.setUTCHours(0, 0, 0, 0)
+        break
       }
       case 'isoWeek': {
-        const day = date.getDay()
-        const diff = date.getDate() - (day === 0 ? 6 : day - 1)
-        date.setDate(diff)
-        date.setHours(0, 0, 0, 0)
-        break;
+        const day = localDate.getUTCDay()
+        const diff = localDate.getUTCDate() - (day === 0 ? 6 : day - 1)
+        localDate.setUTCDate(diff)
+        localDate.setUTCHours(0, 0, 0, 0)
+        break
       }
       case 'month': {
-        date.setDate(1)
-        date.setHours(0, 0, 0, 0)
-        break;
+        localDate.setUTCDate(1)
+        localDate.setUTCHours(0, 0, 0, 0)
+        break
       }
       case 'quarter': {
-        const month = date.getMonth()
+        const month = localDate.getUTCMonth()
         const quarterStartMonth = month - (month % 3)
-        date.setMonth(quarterStartMonth, 1)
-        date.setHours(0, 0, 0, 0)
-        break;
+        localDate.setUTCMonth(quarterStartMonth, 1)
+        localDate.setUTCHours(0, 0, 0, 0)
+        break
       }
       case 'year': {
-        date.setMonth(0, 1)
-        date.setHours(0, 0, 0, 0)
-        break;
+        localDate.setUTCMonth(0, 1)
+        localDate.setUTCHours(0, 0, 0, 0)
+        break
       }
       default: {
-        break;
+        return time
       }
     }
 
-    return date.getTime();
+    return localDate.getTime()
   },
   endOf: function (time: number, unit: TimeUnit | 'isoWeek') {
+    const locale = this.options?.locale || 'en-US'
+    const timeZone = this.options.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone
     const date = new Date(time)
 
+    const localDate = new Date(date.toLocaleString(locale, { timeZone }))
+
     switch (unit) {
+      case 'millisecond': {
+        localDate.setMilliseconds(localDate.getMilliseconds() + 1)
+        break
+      }
       case 'second': {
-        date.setMilliseconds(999)
-        break;
+        localDate.setMilliseconds(999)
+        break
       }
       case 'minute': {
-        date.setSeconds(59, 999)
-        break;
+        localDate.setSeconds(59, 999)
+        break
       }
       case 'hour': {
-        date.setMinutes(59, 59, 999)
-        break;
+        localDate.setMinutes(59, 59, 999)
+        break
       }
       case 'day': {
-        date.setHours(23, 59, 59, 999)
-        break;
+        localDate.setHours(23, 59, 59, 999)
+        break
       }
       case 'week': {
-        const day = date.getDay()
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6
-        date.setDate(diff)
-        date.setHours(23, 59, 59, 999)
+        const day = localDate.getUTCDay()
+        const diff = 6 - day
+        localDate.setUTCDate(localDate.getUTCDate() + diff)
+        localDate.setUTCHours(23, 59, 59, 999)
         break;
       }
       case 'isoWeek': {
-        const day = date.getDay()
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6
-        date.setDate(diff)
-        date.setHours(23, 59, 59, 999)
-        break;
+        const isoDay = localDate.getUTCDay()
+        const isoDiff = 6 - (isoDay === 0 ? 6 : isoDay - 1)
+        localDate.setUTCDate(localDate.getUTCDate() + isoDiff)
+        localDate.setUTCHours(23, 59, 59, 999)
+        break
       }
       case 'month': {
-        date.setMonth(date.getMonth() + 1, 0)
-        date.setHours(23, 59, 59, 999)
-        break;
+        localDate.setUTCMonth(localDate.getUTCMonth() + 1, 0)
+        localDate.setUTCHours(23, 59, 59, 999)
+        break
       }
       case 'quarter': {
-        const month = date.getMonth()
+        const month = localDate.getUTCMonth();
         const quarterEndMonth = month - (month % 3) + 2
-        date.setMonth(quarterEndMonth + 1, 0)
-        date.setHours(23, 59, 59, 999)
-        break;
+        localDate.setUTCMonth(quarterEndMonth + 1, 0)
+        localDate.setUTCHours(23, 59, 59, 999)
+        break
       }
       case 'year': {
-        date.setMonth(11, 31)
-        date.setHours(23, 59, 59, 999)
-        break;
+        localDate.setUTCMonth(11, 31)
+        localDate.setUTCHours(23, 59, 59, 999)
+        break
       }
       default: {
-        break;
+        return time
       }
     }
 
-    return date.getTime()
+    return localDate.getTime()
   }
 })
