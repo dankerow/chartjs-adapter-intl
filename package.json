@@ -7,13 +7,16 @@
     "url": "git+https://github.com/dankerow/chartjs-adapter-intl.git"
   },
   "license": "MIT",
-  "sideEffects": false,
   "type": "module",
   "jsdelivr": "dist/chartjs-adapter-intl.umd.min.js",
   "unpkg": "dist/chartjs-adapter-intl.umd.min.js",
-  "main": "dist/chartjs-adapter-intl.esm.js",
+  "main": "dist/chartjs-adapter-intl.cjs",
+  "types": "dist/chartjs-adapter-intl.d.ts",
   "exports": {
-    ".": "./dist/chartjs-adapter-intl.esm.js"
+    ".": {
+      "import": "./dist/chartjs-adapter-intl.mjs",
+      "require": "./dist/chartjs-adapter-intl.cjs"
+    }
   },
   "files": [
     "dist"
