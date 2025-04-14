@@ -1,211 +1,397 @@
-import { describe, beforeAll, it, expect } from 'vitest'
+import type { DateAdapter } from 'chart.js'
+import type { AdapterOptions } from '../src/index'
+
+import { describe, it, test, expect } from 'vitest'
 import {
   _adapters,
 } from 'chart.js'
 import '../src/index'
 
+let dateAdapter: DateAdapter<AdapterOptions> = new _adapters._date({})
+const formats = dateAdapter.formats()
+
 describe('Date Adapter', () => {
-  let dateAdapter: any
+  describe('parse', () => {
+    test('should parse date correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(timestamp).toBe(new Date('2023-01-01T00:00:00Z').getTime())
+    })
 
-  beforeAll(() => {
-    dateAdapter = new _adapters._date({})
+    test('should parse number date correctly', () => {
+      const timestamp = dateAdapter.parse(1_672_531_200_000)!
+      expect(timestamp).toBe(1_672_531_200_000)
+    })
+
+    test('should parse date object correctly', () => {
+      const timestamp = dateAdapter.parse(new Date('2023-01-01T00:00:00Z'))!
+      expect(timestamp).toBe(1_672_531_200_000)
+    })
+
+    test('should return null for invalid date strings', () => {
+      const timestamp = dateAdapter.parse('invalid-date')
+      expect(timestamp).toBeNull()
+    })
+
+    test('should handle null and undefined values in parse', () => {
+      expect(dateAdapter.parse(null)).toBeNull()
+      expect(dateAdapter.parse(undefined)).toBeNull()
+    })
+
+    test('should handle invalid date in parse', () => {
+      expect(dateAdapter.parse('invalid')).toBeNull()
+    })
+
+    test('should handle invalid date in parse', () => {
+      expect(dateAdapter.parse([])).toBeNull()
+    })
   })
 
-  it('should return correct formats', () => {
-    const expectedFormats = {
-      datetime: { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' },
-      millisecond: { hour: 'numeric', minute: 'numeric', second: 'numeric', fractionalSecondDigits: 3 },
-      second: { hour: 'numeric', minute: 'numeric', second: 'numeric' },
-      minute: { hour: 'numeric', minute: 'numeric' },
-      hour: { hour: 'numeric' },
-      day: { month: 'short', day: 'numeric' },
-      week: { year: 'numeric', month: 'short', day: 'numeric' },
-      month: { year: 'numeric', month: 'short' },
-      quarter: { year: 'numeric', month: 'short' },
-      year: { year: 'numeric' }
-    }
+  describe('formats', () => {
+    test('should format year correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.year as any)).toEqual('2023')
+    })
 
-    const formats = dateAdapter.formats()
-    expect(formats).toEqual(expectedFormats)
+    test('should format quarter correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.quarter as any)).toEqual('Q1 - 2023')
+    })
+
+    test('should format month correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.month as any)).toEqual('Jan 2023')
+    })
+
+    test('should format week correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.week as any)).toEqual('Jan 1')
+    })
+
+    test('should format day correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.day as any)).toEqual('Jan 1')
+    })
+
+    test('should format hour correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.hour as any)).toEqual('12 AM')
+    })
+
+    test('should format minute correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.minute as any)).toEqual('12:00 AM')
+    })
+
+    test('should format second correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.second as any)).toEqual('12:00:00 AM')
+    });
+
+    test('should format millisecond correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.millisecond as any)).toEqual('12:00:00.000 AM')
+    });
+
+    test('should format datetime correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      expect(dateAdapter.format(timestamp, formats.datetime as any)).toEqual('Jan 1, 2023, 12:00:00 AM')
+    });
   })
 
-  it('should format date correctly', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const format = { year: 'numeric', month: 'short', day: 'numeric' }
-    const formattedDate = dateAdapter.format(time, format)
+  describe('add', () => {
+    test('should add default correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      // @ts-ignore
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'default')
+      expect(newTimestamp).toBe(timestamp)
+    })
 
-    expect(formattedDate).toBe('Jan 1, 2023')
+    test('should add year correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'year')
+      expect(dateAdapter.format(newTimestamp, formats.year as any)).toEqual('2024')
+    })
+
+    test('should add quarter correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'quarter')
+      expect(dateAdapter.format(newTimestamp, formats.quarter as any)).toEqual('Q2 - 2023')
+    })
+
+    test('should add month correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'month')
+      expect(dateAdapter.format(newTimestamp, formats.month as any)).toEqual('Feb 2023')
+    })
+
+    test('should add week correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'week')
+      expect(dateAdapter.format(newTimestamp, formats.week as any)).toEqual('Jan 8')
+    })
+
+    test('should add day correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'day')
+      expect(dateAdapter.format(newTimestamp, formats.day as any)).toEqual('Jan 2')
+    })
+
+    test('should add hour correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'hour')
+      expect(dateAdapter.format(newTimestamp, formats.hour as any)).toEqual('1 AM')
+    })
+
+    test('should add minute correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'minute')
+      expect(dateAdapter.format(newTimestamp, formats.minute as any)).toEqual('12:01 AM')
+    })
+
+    test('should add second correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'second')
+      expect(dateAdapter.format(newTimestamp, formats.second as any)).toEqual('12:00:01 AM')
+    });
+
+    test('should add millisecond correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.add(timestamp, 1, 'millisecond')
+      expect(dateAdapter.format(newTimestamp, formats.millisecond as any)).toEqual('12:00:00.001 AM')
+    })
   })
 
-  it('should parse date correctly', () => {
-    const time = '2023-01-01T00:00:00Z'
-    const parsedTime = dateAdapter.parse(time)
+  describe('diff', () => {
+    test('should diff two dates correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-01T00:00:01Z')!
+      // @ts-ignore
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'default')).toEqual(1000)
+    })
 
-    expect(parsedTime).toBe(new Date(time).getTime())
+    test('should diff year correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2024-01-01T00:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'year')).toEqual(1)
+    })
+
+    test('should diff quarter correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-04-01T00:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'quarter')).toEqual(1)
+    })
+
+    test('should diff month correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-02-01T00:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'month')).toEqual(1)
+    })
+
+    test('should diff week correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-08T00:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'week')).toEqual(1)
+    })
+
+    test('should diff day correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-02T00:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'day')).toEqual(1)
+    })
+
+    test('should diff hour correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-01T01:00:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'hour')).toEqual(1)
+    })
+
+    test('should diff minute correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-01T00:01:00Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'minute')).toEqual(1)
+    })
+
+    test('should diff second correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-01T00:00:01Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'second')).toEqual(1)
+    })
+
+    test('should diff millisecond correctly', () => {
+      const timestamp1 = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const timestamp2 = dateAdapter.parse('2023-01-01T00:00:00.001Z')!
+      expect(dateAdapter.diff(timestamp2, timestamp1, 'millisecond')).toEqual(1)
+    })
   })
 
-  it('should add time correctly', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const addedTime = dateAdapter.add(time, 1, 'day')
+  describe('startOf', () => {
+    test('startOf default', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      // @ts-ignore
+      const newTimestamp = dateAdapter.startOf(timestamp, 'default')
+      expect(newTimestamp).toBe(timestamp)
+    })
 
-    expect(new Date(addedTime).getDate()).toBe(2)
+    test('startOf year', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'year')
+      expect(dateAdapter.format(newTimestamp, formats.year as any)).toEqual('2023')
+    })
+
+    test('startOf quarter', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'quarter')
+      expect(dateAdapter.format(newTimestamp, formats.quarter as any)).toEqual('Q1 - 2023')
+    })
+
+    test('startOf month', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'month')
+      expect(dateAdapter.format(newTimestamp, formats.day as any)).toEqual('Jan 1')
+    })
+
+    test('startOf week', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'week')
+      expect(dateAdapter.format(newTimestamp, formats.week as any)).toEqual('Jan 1')
+    })
+
+    test('startOf isoWeek', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'isoWeek')
+      expect(dateAdapter.format(newTimestamp, formats.week as any)).toEqual('Dec 26')
+    })
+
+    test('startOf day', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'day')
+      expect(dateAdapter.format(newTimestamp, formats.day as any)).toEqual('Jan 1')
+    })
+
+    test('startOf hour', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'hour')
+      expect(dateAdapter.format(newTimestamp, formats.hour as any)).toEqual('12 PM')
+    })
+
+    test('startOf minute', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:00Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'minute')
+      expect(dateAdapter.format(newTimestamp, formats.minute as any)).toEqual('12:30 PM')
+    })
+
+    test('startOf second', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:30Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'second')
+      expect(dateAdapter.format(newTimestamp, formats.second as any)).toEqual('12:30:30 PM')
+    })
+
+    test('startOf millisecond', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:30.500Z')!
+      const newTimestamp = dateAdapter.startOf(timestamp, 'millisecond')
+      expect(dateAdapter.format(newTimestamp, formats.millisecond as any)).toEqual('12:30:30.500 PM')
+    })
   })
 
-  it('should calculate diff correctly', () => {
-    const time1 = new Date(2023, 0, 1).getTime()
-    const time2 = new Date(2023, 0, 2).getTime()
-    const diff = dateAdapter.diff(time2, time1, 'day')
+  describe('endOf', () => {
+    test('endOf default', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      // @ts-ignore
+      const newTimestamp = dateAdapter.endOf(timestamp, 'default')
+      expect(newTimestamp).toBe(timestamp)
+    })
 
-    expect(diff).toBe(1)
+    test('endOf year correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'year')
+      expect(dateAdapter.format(newTimestamp, formats.year as any)).toEqual('2023')
+    })
+
+    test('endOf quarter correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'quarter')
+      expect(dateAdapter.format(newTimestamp, formats.quarter as any)).toEqual('Q1 - 2023')
+    })
+
+    test('endOf month correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'month')
+      expect(dateAdapter.format(newTimestamp, formats.month as any)).toEqual('Jan 2023')
+    })
+
+    test('endOf week correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'week')
+      expect(dateAdapter.format(newTimestamp, formats.week as any)).toEqual('Jan 7')
+    })
+
+    test('endOf isoWeek correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'isoWeek')
+      expect(dateAdapter.format(newTimestamp, formats.week as any)).toEqual('Jan 1')
+    })
+
+    test('endOf day correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T00:00:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'day')
+      expect(dateAdapter.format(newTimestamp, formats.day as any)).toEqual('Jan 1')
+    })
+
+    test('endOf hour correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'hour')
+      expect(dateAdapter.format(newTimestamp, formats.hour as any)).toEqual('12 PM')
+    })
+
+    test('endOf minute correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:00Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'minute')
+      expect(dateAdapter.format(newTimestamp, formats.minute as any)).toEqual('12:30 PM')
+    })
+
+    test('endOf second correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:30Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'second')
+      expect(dateAdapter.format(newTimestamp, formats.second as any)).toEqual('12:30:30 PM')
+    })
+
+    test('should endOf millisecond correctly', () => {
+      const timestamp = dateAdapter.parse('2023-01-01T12:30:30Z')!
+      const newTimestamp = dateAdapter.endOf(timestamp, 'millisecond')
+      expect(dateAdapter.format(newTimestamp, formats.millisecond as any)).toEqual('12:30:30.001 PM')
+    })
   })
 
-  it('should get start of unit correctly', () => {
-    const time = new Date(2023, 0, 1, 12, 30).getTime()
-    const startOfDay = dateAdapter.startOf(time, 'day')
+  describe('locales', () => {
+    it('should format date correctly in en-US locale', () => {
+      const time = new Date(2023, 0, 1).getTime()
+      const formattedDate = dateAdapter.format(time, formats.datetime as any)
 
-    expect(new Date(startOfDay).getHours()).toBe(0)
-  })
+      expect(formattedDate).toBe('Jan 1, 2023, 8:00:00 AM')
+    })
 
-  it('should get end of unit correctly', () => {
-    const time = new Date(2023, 0, 1, 12, 30).getTime()
-    const endOfDay = dateAdapter.endOf(time, 'day')
+    it('should format date correctly in fr-FR locale', () => {
+      const time = new Date(2023, 0, 1).getTime()
 
-    expect(new Date(endOfDay).getHours()).toBe(23)
-  })
+      dateAdapter = new _adapters._date({
+        locale: 'fr-FR'
+      })
 
-  it('should return null for invalid date strings', () => {
-    const invalidDate = 'invalid-date'
-    const parsedTime = dateAdapter.parse(invalidDate)
+      const formattedDate = dateAdapter.format(time, formats.datetime as any)
 
-    expect(parsedTime).toBeNull()
-  })
+      expect(formattedDate).toBe('1 janv. 2023, 08:00:00')
+    })
 
-  it('should add different time units correctly', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const addedHour = dateAdapter.add(time, 1, 'hour')
+    it('should format date correctly in de-DE locale', () => {
+      const time = new Date(2023, 0, 1).getTime()
 
-    expect(new Date(addedHour).getHours()).toBe(1)
+      dateAdapter = new _adapters._date({
+        locale: 'de-DE'
+      })
 
-    const addedMonth = dateAdapter.add(time, 1, 'month')
+      const formattedDate = dateAdapter.format(time, formats.datetime as any)
 
-    expect(new Date(addedMonth).getMonth()).toBe(1)
-  })
-
-  it('should calculate diff in different time units correctly', () => {
-    const time1 = new Date(2023, 0, 1).getTime()
-    const time2 = new Date(2023, 0, 2).getTime()
-    const diffHours = dateAdapter.diff(time2, time1, 'hour')
-
-    expect(diffHours).toBe(24)
-
-    const diffMinutes = dateAdapter.diff(time2, time1, 'minute')
-
-    expect(diffMinutes).toBe(1440)
-  })
-
-  it('should get start of different time units correctly', () => {
-    const time = new Date(2023, 0, 1, 12, 30).getTime()
-    const startOfHour = dateAdapter.startOf(time, 'hour')
-
-    expect(new Date(startOfHour).getMinutes()).toBe(0)
-
-    const startOfMonth = dateAdapter.startOf(time, 'month')
-
-    expect(new Date(startOfMonth).getDate()).toBe(1)
-  })
-
-  it('should get end of different time units correctly', () => {
-    const time = new Date(2023, 0, 1, 12, 30).getTime()
-    const endOfHour = dateAdapter.endOf(time, 'hour')
-
-    expect(new Date(endOfHour).getMinutes()).toBe(59)
-
-    const endOfMonth = dateAdapter.endOf(time, 'month')
-
-    expect(new Date(endOfMonth).getDate()).toBe(31)
-  })
-
-  it('should handle null and undefined values in parse', () => {
-    expect(dateAdapter.parse(null)).toBeNull()
-    expect(dateAdapter.parse(undefined)).toBeNull()
-  })
-
-  it('should handle invalid date in parse', () => {
-    expect(dateAdapter.parse('invalid')).toBeNull()
-  })
-
-  it('should handle default case in add', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const addedTime = dateAdapter.add(time, 1, 'invalid-unit')
-
-    expect(addedTime).toBe(time)
-  })
-
-  it('should handle default case in diff', () => {
-    const time1 = new Date(2023, 0, 1).getTime()
-    const time2 = new Date(2023, 0, 2).getTime()
-    const diff = dateAdapter.diff(time2, time1, 'invalid-unit')
-
-    expect(diff).toBe(time2 - time1)
-  })
-
-  it('should handle default case in startOf', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const startOf = dateAdapter.startOf(time, 'invalid-unit')
-
-    expect(startOf).toBe(time)
-  })
-
-  it('should handle default case in endOf', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const endOf = dateAdapter.endOf(time, 'invalid-unit')
-
-    expect(endOf).toBe(time)
-  })
-
-  it('should handle isoWeek in startOf', () => {
-    const time = new Date(2023, 0, 4).getTime() // Wednesday
-    const startOfIsoWeek = dateAdapter.startOf(time, 'isoWeek')
-    const startOfIsoWeekDate = new Date(startOfIsoWeek)
-
-    expect(startOfIsoWeekDate.getDay()).toBe(1) // Monday
-  })
-
-  it('should handle isoWeek in endOf', () => {
-    const time = new Date(2023, 0, 4).getTime() // Wednesday
-    const endOfIsoWeek = dateAdapter.endOf(time, 'isoWeek')
-    const endOfIsoWeekDate = new Date(endOfIsoWeek)
-
-    expect(endOfIsoWeekDate.getDay()).toBe(0) // Sunday
-  })
-
-  it('should format date correctly in en-US locale', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const format = { year: 'numeric', month: 'short', day: 'numeric' }
-    const formattedDate = dateAdapter.format(time, format)
-
-    expect(formattedDate).toBe('Jan 1, 2023')
-  })
-
-  it('should format date correctly in fr-FR locale', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const format = { year: 'numeric', month: 'short', day: 'numeric' }
-
-    dateAdapter.options = { locale: 'fr-FR' }
-
-    const formattedDate = dateAdapter.format(time, format)
-
-    expect(formattedDate).toBe('1 janv. 2023')
-  })
-
-  it('should format date correctly in de-DE locale', () => {
-    const time = new Date(2023, 0, 1).getTime()
-    const format = { year: 'numeric', month: 'short', day: 'numeric' }
-
-    dateAdapter.options = { locale: 'de-DE' }
-
-    const formattedDate = dateAdapter.format(time, format)
-
-    expect(formattedDate).toBe('1. Jan. 2023')
+      expect(formattedDate).toBe('1. Jan. 2023, 08:00:00')
+    })
   })
 })
