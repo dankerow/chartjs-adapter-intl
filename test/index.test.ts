@@ -7,7 +7,9 @@ import {
 } from 'chart.js'
 import '../src/index'
 
-let dateAdapter: DateAdapter<AdapterOptions> = new _adapters._date({})
+let dateAdapter: DateAdapter<AdapterOptions> = new _adapters._date({
+  timeZone: 'America/Vancouver'
+})
 const formats = dateAdapter.formats()
 
 describe('Date Adapter', () => {
