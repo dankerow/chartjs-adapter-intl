@@ -16,57 +16,48 @@ const externals = ['chart.js']
 export default defineBuildConfig([
   {
     entries: [
-      './src/index'
+      {
+        input: './src/index',
+        outDir: 'dist',
+        name: 'chartjs-adapter-intl'
+      }
     ],
-
+    declaration: true,
+    clean: true,
     rollup: {
+      emitCJS: true,
       output: {
-        dir: 'dist',
-        entryFileNames: 'chartjs-adapter-intl.esm.js',
-        format: 'esm',
+        exports: 'auto',
+        banner,
         indent: false,
-        globals
+        globals,
+        format: 'esm'
       }
     },
-
     externals
   },
   {
     entries: [
-      './src/index'
-    ],
-
-    rollup: {
-      output: {
-        dir: 'dist',
-        entryFileNames: 'chartjs-adapter-intl.umd.js',
-        format: 'umd',
-        indent: false,
-        globals
+      {
+        input: './src/index',
+        outDir: 'dist',
+        name: 'chartjs-adapter-intl.umd.min'
       }
-    },
-
-    externals
-  },
-  {
-    entries: [
-      './src/index'
     ],
-
+    clean: true,
     rollup: {
       esbuild: {
         minify: true
       },
       output: {
-        dir: 'dist',
-        entryFileNames: 'chartjs-adapter-intl.umd.min.js',
         format: 'umd',
         indent: false,
         banner,
-        globals
+        globals,
+        name: 'chartjs-adapter-intl',
+        sourcemap: true
       }
     },
-
     externals
   }
-]);
+])
