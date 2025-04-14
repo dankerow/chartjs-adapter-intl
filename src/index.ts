@@ -55,7 +55,7 @@ _adapters._date.override<AdapterOptions>({
     return null
   },
   format: function (timestamp: number, format: TimeUnit): string {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const timeZone = this.options?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone
     const locale = this.options?.locale || 'en-US'
 
     const date = new Date(timestamp)
@@ -76,7 +76,7 @@ _adapters._date.override<AdapterOptions>({
   },
   add: function (time: number, amount: number, unit: string) {
     const locale = this.options?.locale || 'en-US'
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const timeZone = this.options?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone
     const date = new Date(time)
 
     const localDate = new Date(date.toLocaleString(locale, { timeZone }))
@@ -165,7 +165,7 @@ _adapters._date.override<AdapterOptions>({
   },
   startOf: function (time: number, unit: TimeUnit | 'isoWeek'): number {
     const locale = this.options?.locale || 'en-US'
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const timeZone = this.options?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone
     const date = new Date(time)
 
     const localDate = new Date(date.toLocaleString(locale, { timeZone }))
