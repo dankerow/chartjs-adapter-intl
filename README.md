@@ -113,6 +113,23 @@ const config = {
 const myChart = new Chart(document.querySelector('#myChart'), config);
 ```
 
+## Troubleshooting
+
+If you're seeing this error:
+
+```text
+Error: This method is not implemented: Check that a complete date adapter is provided.
+```
+
+This means the library didn't actually initialize.
+This could happen because the side-effect import is being tree-shaken during the build.
+
+Use an explicit run-time import instead:
+
+```javascript
+await import("chartjs-adapter-intl")
+```
+
 ## Development
 
 To build the project, run:
